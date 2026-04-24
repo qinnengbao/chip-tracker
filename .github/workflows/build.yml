@@ -3,9 +3,7 @@ name: Build Flutter APK
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
-  workflow_dispatch:  # 允许手动触发
+  workflow_dispatch:
 
 jobs:
   build:
@@ -14,27 +12,38 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Setup Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+
     - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: '3.16.0'
         channel: 'stable'
+        cache: true
 
     - name: Get dependencies
       run: flutter pub get
 
-    - name: Build APK
-      run: flutter build apk --release
+    - name: Build APK (debug)
+      run: flutter build apk --debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
       with:
-        name: chip-tracker-apk
-        path: build/app/outputs/flutter-apk/app-release.apk
+        name: chip-tracker-debug-apk
+        path: build/app/outputs/flutter-apk/app-debug.apk
 
-    - name: Create Release
-      if: github.event_name == 'workflow_dispatch'
+    - name: Create Release with APK
       uses: softprops/action-gh-release@v1
+      if: github.event_name == 'workflow_dispatch'
       with:
-        tag_name: v1.0.0
-        files: build/app/outputs/flutter-apk/app-release.apk
+        tag_name: v1.0.${{ github.run_number }}
+        files: build/app/outputs/flutter-apk/app-debug.apk
+        body: |
+          筹码追踪软件 APK
+          
+          下载后直接安装到安卓手机即可使用
